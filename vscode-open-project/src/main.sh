@@ -44,7 +44,10 @@ begin
   items = []
   
   data["entries"].each do |entry|
-    uri = entry["folderUri"] || entry["fileUri"]
+    # 支持 workspace、文件夹和单个文件
+    uri = (entry["workspace"] && entry["workspace"]["configPath"]) ||
+          entry["folderUri"] ||
+          entry["fileUri"]
     next unless uri
     
     # 处理路径
@@ -54,16 +57,27 @@ begin
     # 如果有查询词，进行过滤
     next if !query.empty? && !name.downcase.include?(query)
     
+    # 根据类型设置图标和标题
+    if entry["workspace"]
+      title = name.sub(/\.code-workspace$/, "")
+      subtitle = "#{path} (Workspace)"
+      icon_type = "fileicon"
+    else
+      title = name
+      subtitle = path
+      icon_type = "fileicon"
+    end
+    
     # 添加到结果
     items << {
       uid: name,
       type: "file",
-      title: name,
-      subtitle: path,
+      title: title,
+      subtitle: subtitle,
       arg: path,
       autocomplete: name,
       icon: {
-        type: "fileicon",
+        type: icon_type,
         path: path
       }
     }
